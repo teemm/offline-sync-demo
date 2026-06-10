@@ -30,5 +30,6 @@
     "!/**/.*",
     "!/**/*__*",
     "!/**/*__*/**"
-  ]
+  ],
+  "navigationRequestStrategy": "performance"
 }

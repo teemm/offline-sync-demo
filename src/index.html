@@ -12,5 +12,10 @@
   <body>
     <app-root></app-root>
     <noscript>Please enable JavaScript to continue using this application.</noscript>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/ngsw-worker.js', { scope: '/' });
+      }
+    </script>
   </body>
 </html>
