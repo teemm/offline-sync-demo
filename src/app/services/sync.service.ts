@@ -1,6 +1,4 @@
-import { Injectable, inject, signal, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
+import { Injectable, inject, signal, effect } from '@angular/core';
 import { ConnectivityService } from './connectivity.service';
 import { OfflineStorageService } from './offline-storage.service';
 import { OfflineRecord } from '../models/offline-record.model';
@@ -11,7 +9,6 @@ export type SyncStatus = 'idle' | 'syncing' | 'completed';
 export class SyncService {
   private readonly connectivity = inject(ConnectivityService);
   private readonly storage = inject(OfflineStorageService);
-  private readonly destroyRef = inject(DestroyRef);
 
   private isSyncing = false;
 
@@ -21,14 +18,11 @@ export class SyncService {
   readonly currentRecord = signal<OfflineRecord | null>(null);
 
   constructor() {
-    this.connectivity.online$
-      .pipe(
-        filter((online) => online),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(() => {
+    effect(() => {
+      if (this.connectivity.online()) {
         this.sync();
-      });
+      }
+    });
   }
 
   async sync(): Promise<void> {
@@ -48,15 +42,12 @@ export class SyncService {
       this.currentIndex.set(i + 1);
       this.currentRecord.set(record);
 
-      // Update status to syncing
       record.status = 'syncing';
       await this.storage.updateRecord(record);
 
-      // Simulated API call
       console.log('Record ready for save', record);
       await this.delay(1000);
 
-      // Remove after successful sync
       await this.storage.removeRecord(record.id);
     }
 
@@ -64,7 +55,6 @@ export class SyncService {
     this.currentRecord.set(null);
     this.isSyncing = false;
 
-    // Reset to idle after a brief display of completion
     setTimeout(() => {
       if (this.syncStatus() === 'completed') {
         this.syncStatus.set('idle');

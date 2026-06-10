@@ -1,5 +1,4 @@
-import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ConnectivityService } from '../../services/connectivity.service';
 import { OfflineStorageService } from '../../services/offline-storage.service';
@@ -11,10 +10,10 @@ import { OfflineRecord } from '../../models/offline-record.model';
   imports: [ReactiveFormsModule],
   templateUrl: './offline-demo.html',
   styleUrl: './offline-demo.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OfflineDemoComponent implements OnInit {
+export class OfflineDemoComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly platformId = inject(PLATFORM_ID);
   readonly connectivity = inject(ConnectivityService);
   private readonly storage = inject(OfflineStorageService);
   readonly sync = inject(SyncService);
@@ -28,10 +27,8 @@ export class OfflineDemoComponent implements OnInit {
     note: ['', Validators.required],
   });
 
-  ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.loadRecords();
-    }
+  constructor() {
+    this.loadRecords();
   }
 
   async loadRecords(): Promise<void> {
@@ -52,7 +49,6 @@ export class OfflineDemoComponent implements OnInit {
       status: 'pending',
     };
 
-    // Always save to IndexedDB first
     await this.storage.addRecord(record);
     await this.loadRecords();
 
