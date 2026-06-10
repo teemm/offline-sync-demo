@@ -1,0 +1,150 @@
+<div class="offline-demo">
+  <!-- Offline Banner -->
+  @if (!connectivity.online()) {
+    <div class="offline-banner">
+      ⚠️ Offline Mode — Records will be synchronized when connection is restored
+    </div>
+  }
+
+  <div class="container">
+    <h1 class="page-title">Offline Sync Demo</h1>
+
+    <!-- Status Panel -->
+    <div class="status-panel">
+      <div class="status-item">
+        <span class="status-label">Online Status:</span>
+        @if (connectivity.online()) {
+          <span class="status-value online">🟢 Online</span>
+        } @else {
+          <span class="status-value offline">🔴 Offline</span>
+        }
+      </div>
+      <div class="status-item">
+        <span class="status-label">Queued Records:</span>
+        <span class="status-value">{{ records().length }}</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Sync Status:</span>
+        <span class="status-value sync-status" [class]="sync.syncStatus()">
+          @switch (sync.syncStatus()) {
+            @case ('idle') { Idle }
+            @case ('syncing') { Syncing }
+            @case ('completed') { Completed ✓ }
+          }
+        </span>
+      </div>
+    </div>
+
+    <!-- Message Toast -->
+    @if (message(); as msg) {
+      <div class="toast" [class]="msg.type">
+        {{ msg.text }}
+      </div>
+    }
+
+    <!-- Sync Visualization -->
+    @if (sync.syncStatus() === 'syncing') {
+      <div class="sync-visualization">
+        <h3>Synchronizing {{ sync.currentIndex() }} of {{ sync.totalCount() }}</h3>
+        <div class="progress-bar-container">
+          <div class="progress-bar" [style.width.%]="(sync.currentIndex() / sync.totalCount()) * 100"></div>
+        </div>
+        @if (sync.currentRecord(); as current) {
+          <p class="currently-processing">
+            Currently processing: <strong>{{ current.firstName }} {{ current.lastName }}</strong>
+          </p>
+        }
+      </div>
+    }
+
+    <div class="grid">
+      <!-- Form Card -->
+      <div class="card">
+        <h2>Add Record</h2>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input id="firstName" formControlName="firstName" type="text" placeholder="Enter first name" />
+            @if (form.controls.firstName.touched && form.controls.firstName.invalid) {
+              <span class="error">First name is required</span>
+            }
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input id="lastName" formControlName="lastName" type="text" placeholder="Enter last name" />
+            @if (form.controls.lastName.touched && form.controls.lastName.invalid) {
+              <span class="error">Last name is required</span>
+            }
+          </div>
+          <div class="form-group">
+            <label for="note">Note</label>
+            <textarea id="note" formControlName="note" placeholder="Enter a note" rows="3"></textarea>
+            @if (form.controls.note.touched && form.controls.note.invalid) {
+              <span class="error">Note is required</span>
+            }
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+            Save Record
+          </button>
+        </form>
+      </div>
+
+      <!-- Testing Tools Card -->
+      <div class="card">
+        <h2>Offline Testing Tools</h2>
+        <p class="card-description">Use these tools to test offline behavior.</p>
+        <div class="tools-grid">
+          <button class="btn btn-secondary" (click)="addFakeRecords()">
+            Add 5 Fake Records
+          </button>
+          <button class="btn btn-secondary" (click)="generateRandomRecord()">
+            Generate Random Record
+          </button>
+          <button class="btn btn-accent" (click)="forceSync()" [disabled]="records().length === 0">
+            Force Sync
+          </button>
+          <button class="btn btn-danger" (click)="clearQueue()" [disabled]="records().length === 0">
+            Clear Queue
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Queue Table -->
+    <div class="card full-width">
+      <h2>Queued Records</h2>
+      @if (records().length === 0) {
+        <p class="empty-state">No records in queue.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Created At</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (record of records(); track record.id) {
+                <tr>
+                  <td class="id-cell">{{ record.id.substring(0, 8) }}…</td>
+                  <td>{{ record.firstName }}</td>
+                  <td>{{ record.lastName }}</td>
+                  <td>{{ formatDate(record.createdAt) }}</td>
+                  <td>
+                    <span class="badge" [class]="record.status">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>
